@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0b1220">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LifeOS">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235b8cff'/%3E%3Cpath d='M18 44V20h6v18h14v6z' fill='white'/%3E%3C/svg%3E">
+<title>LifeOS 儀表板</title>
+<style>
+:root{
+  --bg:#0b1220;--panel:#111a2e;--card:#15203a;--card2:#1a2747;--line:#24345a;
+  --text:#e6ecff;--dim:#8a9bc4;--faint:#5b6b93;
+  --acc:#5b8cff;--ok:#3ddc97;--warn:#ffb547;--bad:#ff6b7a;--vio:#b18cff;--cy:#4fd1e8;
+  --r:14px;
+}
+*{box-sizing:border-box;margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--text);font:15px/1.5 system-ui,"Noto Sans TC","Microsoft JhengHei",sans-serif;min-height:100vh}
+button,input{font:inherit;color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:16px}
+/* 鎖定畫面 */
+#lock{display:grid;place-items:center;min-height:100vh;padding:16px}
+#lock form{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:28px;width:min(360px,100%)}
+#lock h1{font-size:20px;margin-bottom:4px}
+#lock p{color:var(--dim);font-size:13px;margin-bottom:16px}
+input[type=password],.search{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 14px;outline:none}
+input:focus{border-color:var(--acc)}
+.btn{margin-top:12px;width:100%;background:var(--acc);border:0;border-radius:10px;padding:11px;font-weight:600;cursor:pointer}
+.err{color:var(--bad);font-size:13px;margin-top:8px;min-height:1.2em}
+.remember{display:flex;gap:6px;align-items:center;color:var(--dim);font-size:13px;margin-top:10px}
+/* 頂部 */
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+header h1{font-size:18px;display:flex;align-items:center;gap:8px}
+.upd{color:var(--faint);font-size:12px;text-align:right}
+.logout{background:none;border:1px solid var(--line);border-radius:8px;padding:4px 10px;color:var(--dim);cursor:pointer;font-size:12px}
+.now{background:linear-gradient(135deg,#1c2d5c,#162447);border:1px solid #2f4a8a;border-radius:var(--r);padding:16px 18px;margin-bottom:14px}
+.now .lbl{color:var(--cy);font-size:12px;font-weight:600;letter-spacing:.05em}
+.now .what{font-size:24px;font-weight:700;margin:2px 0}
+.now .meta{color:var(--dim);font-size:13px}
+.bar{height:6px;background:#0d1730;border-radius:9px;overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:var(--acc);border-radius:9px}
+.nextrow{display:flex;gap:8px;margin-top:12px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.nx{flex:0 0 auto;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:13px}
+.nx b{color:var(--cy);font-weight:600;margin-right:6px}
+.libbox{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer;color:var(--dim)}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.chip span{opacity:.7;margin-left:4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr));gap:12px;margin-top:14px}
+.grid>*{min-width:0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;cursor:pointer;transition:.15s;text-align:left;width:100%;display:flex;flex-direction:column;justify-content:flex-start}
+.card:hover,.card:focus-visible{border-color:var(--acc);background:var(--card2);outline:none}
+.card h3{font-size:15px;display:flex;align-items:center;gap:8px}
+.card .sub{color:var(--faint);font-size:12px;margin-top:1px}
+.row{display:flex;justify-content:space-between;align-items:flex-end;margin-top:12px;gap:8px}
+.badge{display:inline-block;border-radius:6px;padding:2px 8px;font-size:12px;background:rgba(91,140,255,.15);color:var(--acc)}
+.b-ok{background:rgba(61,220,151,.13);color:var(--ok)}.b-warn{background:rgba(255,181,71,.13);color:var(--warn)}
+.b-bad{background:rgba(255,107,122,.13);color:var(--bad)}.b-vio{background:rgba(177,140,255,.14);color:var(--vio)}
+.big{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.big small{font-size:12px;color:var(--dim);font-weight:400;margin-left:4px}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}.dim{color:var(--dim)}
+.mini{display:flex;flex-direction:column;gap:4px;margin-top:10px;font-size:13px;color:var(--dim)}
+.mini div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--ok)}
+.empty{color:var(--faint);text-align:center;padding:30px}
+/* 詳細面板 */
+dialog{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:var(--r);padding:0;margin:auto;width:min(640px,calc(100% - 24px));max-height:85vh}
+dialog::backdrop{background:rgba(3,7,18,.7)}
+.dh{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
+.dh h2{font-size:17px}
+.x{background:none;border:0;font-size:22px;color:var(--dim);cursor:pointer;line-height:1}
+.db{padding:14px 18px 20px;overflow:auto}
+.db h4{font-size:13px;color:var(--dim);margin:14px 0 6px;font-weight:600}
+.db h4:first-child{margin-top:0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--faint);font-weight:500}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+.step{display:flex;gap:10px;align-items:center;padding:6px 0;font-size:14px}
+.step i{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);flex:0 0 auto;display:grid;place-items:center;font-style:normal;font-size:11px}
+.step.done i{background:var(--ok);border-color:var(--ok);color:#06231a}
+.step.done{color:var(--dim)}
+.cur{background:rgba(91,140,255,.12)}
+.bars{display:flex;align-items:flex-end;gap:6px;height:110px;margin-top:8px}
+.bars div{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--faint);height:100%;justify-content:flex-end}
+.bars b{width:100%;background:var(--vio);border-radius:4px 4px 0 0;min-height:2px}
+.bars div.today b{background:var(--acc)}
+@media (max-width:520px){.grid{grid-template-columns:1fr}.now .what{font-size:21px}header h1{font-size:16px}}
+</style>
+</head>
+<body>
+<div id="lock">
+  <form id="f" autocomplete="off">
+    <h1>LifeOS 儀表板</h1>
+    <p>輸入密碼解鎖。資料是加密的，沒有密碼看不到內容。</p>
+    <input type="password" id="pw" placeholder="密碼" aria-label="密碼" autofocus>
+    <label class="remember"><input type="checkbox" id="rem" checked> 這台裝置記住我</label>
+    <button class="btn">解鎖</button>
+    <div class="err" id="err" role="alert"></div>
+  </form>
+</div>
+
+<div class="wrap" id="app" hidden>
+  <header>
+    <h1>LifeOS 儀表板</h1>
+    <div class="upd"><div id="upd"></div><button class="logout" id="out">登出</button></div>
+  </header>
+  <section class="now" id="now"></section>
+  <section class="libbox">
+    <input class="search" id="q" placeholder="搜尋卡片、任務、專案…" aria-label="搜尋">
+    <div class="chips" id="chips"></div>
+    <div class="grid" id="grid"></div>
+  </section>
+</div>
+
+<dialog id="dlg"><div class="dh"><h2 id="dt"></h2><button class="x" id="dx" aria-label="關閉">×</button></div><div class="db" id="dbody"></div></dialog>
+
+<script>
+const ITER_KEY = 'lifeos-dash-pw';
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+const fmtTok = n => n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? Math.round(n/1e3)+'k' : n;
+const money = n => (n < 0 ? '-' : '') + Math.abs(n).toLocaleString('en-US');
+const daysTo = d => d ? Math.ceil((new Date(d+'T23:59:59+08:00') - Date.now())/864e5) : null;
+
+async function unseal(blob, pw) {
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey({name:'PBKDF2', salt:b64(blob.salt), iterations:blob.iter, hash:'SHA-256'},
+    base, {name:'AES-GCM', length:256}, false, ['decrypt']);
+  return crypto.subtle.decrypt({name:'AES-GCM', iv:b64(blob.iv)}, key, b64(blob.ct));
+}
+const decrypt = async (blob, pw) => JSON.parse(new TextDecoder().decode(await unseal(blob, pw)));
+async function download(f, btn) {
+  btn.disabled = true; btn.textContent = '解密中…';
+  try {
+    const r = await fetch('files/' + f.id + '.enc', {cache:'no-store'});
+    if (!r.ok) throw new Error('檔案還沒上傳完，等幾分鐘再試');
+    const buf = await unseal(await r.json(), PW);
+    if (/\.html?$/i.test(f.name)) {   // 早報這類 HTML 直接在視窗裡看，手機不用另外開檔
+      const fr = Object.assign(document.createElement('iframe'), {sandbox:'allow-popups', srcdoc:new TextDecoder().decode(buf)});
+      fr.style.cssText = 'width:100%;height:70vh;border:0;background:#fff;border-radius:8px';
+      $('#dt').textContent = f.name; $('#dbody').replaceChildren(fr); return;
+    }
+    const url = URL.createObjectURL(new Blob([buf]));
+    const a = Object.assign(document.createElement('a'), {href:url, download:f.name});
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    btn.textContent = '已下載';
+  } catch (e) { btn.textContent = '失敗：' + e.message; }
+  btn.disabled = false;
+}
+const size = n => n >= 2**20 ? (n/2**20).toFixed(1) + ' MB' : Math.ceil(n/1024) + ' KB';
+async function load(pw) {
+  const r = await fetch('data.enc.json?t=' + Date.now(), {cache:'no-store'});
+  if (!r.ok) throw new Error('讀不到資料（' + r.status + '）');
+  return decrypt(await r.json(), pw);
+}
+const store = {
+  get(){ try { return localStorage.getItem(ITER_KEY); } catch { return null; } },
+  set(v){ try { v ? localStorage.setItem(ITER_KEY, v) : localStorage.removeItem(ITER_KEY); } catch {} },
+};
+
+let D, filter = '全部', PW;
+const cards = [];   // {tag, title, sub, html, text, open}
+
+function build() {
+  cards.length = 0;
+  const T = D.trading, K = D.tokens, J = D.jobs;
+
+  // 檔案收件匣
+  const F = D.files || [];
+  cards.push({tag:'收件匣', title:'檔案收件匣', icon:'⇩', sub: F.length ? `${F.length} 個檔案・最新 ${F[0].date}` : '目前沒有檔案',
+    body:`<div class="mini">${F.slice(0,3).map(f => `<div>· ${esc(f.name)} <span class="dim">${size(f.size)}</span></div>`).join('') || '<div>在 Telegram 跟我說要什麼檔案，我放進這裡</div>'}</div>`,
+    detail:() => F.length ? `<table>${F.map((f,i) => `<tr><td>${esc(f.name)}<div class="dim" style="font-size:12px">${f.date}・${size(f.size)}</div></td>
+      <td class="n"><button class="chip on" data-f="${i}">下載</button></td></tr>`).join('')}</table>` :
+      '<p class="dim">在 Telegram 跟我說「把 OOO 傳到儀表板」，我會放進這裡，10 分鐘內出現。</p>',
+    text:'檔案 收件匣 下載 ' + F.map(f => f.name).join(' '), warn: false});
+
+  // 待辦
+  const td = D.todos;
+  cards.push({tag:'任務', title:'未完成任務', icon:'☑', sub:td.length + ' 項',
+    body:`<div class="mini">${td.slice(0,3).map(t => `<div>· ${esc(t.text)}</div>`).join('')}</div>`,
+    detail:() => `<table><tr><th>任務</th><th>分類</th><th>期限</th></tr>${td.map(t => {
+      const n = daysTo(t.due);
+      return `<tr><td>${esc(t.text)}</td><td><span class="badge">${esc(t.tag)}</span></td><td>${t.due ? `${t.due.slice(5)} <span class="${n<=3?'bad':n<=7?'warn':'dim'}">(${n} 天)</span>` : '<span class="dim">—</span>'}</td></tr>`;}).join('')}</table>`,
+    text: td.map(t => t.text).join(' ')});
+
+  // 專案
+  for (const p of D.projects) {
+    const done = p.steps.filter(s => s[1]).length, pct = Math.round(done / p.steps.length * 100);
+    const n = daysTo(p.deadline), nextStep = (p.steps.find(s => !s[1]) || ['全部完成'])[0];
+    cards.push({tag:'專案', title:p.name, icon:'◆', sub:p.goal,
+      body:`<div class="mini"><div>下一步：${esc(nextStep)}</div></div>
+        <div class="row"><div class="big">${pct}%<small>${done}/${p.steps.length} 步</small></div>
+        ${n != null ? `<span class="badge ${n<=7?'b-bad':n<=21?'b-warn':''}">剩 ${n} 天</span>` : ''}</div>
+        <div class="bar"><i style="width:${pct}%;background:var(--ok)"></i></div>`,
+      detail:() => `<h4>${esc(p.goal)}${p.deadline ? `・截止 ${p.deadline}` : ''}</h4>` +
+        p.steps.map(s => `<div class="step ${s[1]?'done':''}"><i>${s[1]?'✓':''}</i>${esc(s[0])}</div>`).join('') +
+        (p.tag === '分潤' ? `<h4>草稿庫</h4><div>affiliate/drafts 共 ${D.drafts} 篇</div>` : ''),
+      text: p.name + p.goal + p.steps.map(s => s[0]).join('')});
+  }
+
+  // 額度
+  const L = K.limits, lim = Object.values(L);
+  const maxPct = Math.max(0, ...lim.map(x => x.pct)), today = K.last7[K.last7.length - 1];
+  cards.push({tag:'額度', title:'Claude 額度', icon:'⚡', sub:`今日 ${fmtTok(today.tok)} tokens・$${today.usd}`,
+    body: lim.map(x => `<div class="mini"><div>${x.label} 已用 <b class="${x.pct>=80?'bad':x.pct>=50?'warn':'ok'}">${x.pct}%</b>・${x.reset} 重置</div></div>
+      <div class="bar"><i style="width:${x.pct}%;background:${x.pct>=80?'var(--bad)':x.pct>=50?'var(--warn)':'var(--ok)'}"></i></div>`).join('') || '<div class="mini">還沒有額度資料</div>',
+    detail:() => {
+      const mx = Math.max(...K.last7.map(d => d.tok), 1);
+      return `<h4>近 7 天 tokens</h4><div class="bars">${K.last7.map((d,i) =>
+        `<div class="${i===6?'today':''}" title="${d.day}：${fmtTok(d.tok)}・$${d.usd}"><span>${fmtTok(d.tok)}</span><b style="height:${d.tok/mx*80}%"></b>${d.day}</div>`).join('')}</div>
+        <h4>額度</h4><table>${lim.map(x => `<tr><td>${x.label}</td><td class="n">${x.pct}%</td><td>${x.reset} 重置</td></tr>`).join('')}</table>
+        <p class="dim" style="font-size:12px;margin-top:8px">額度數字是 ${K.limits_age_min ?? '?'} 分鐘前 Claude 狀態列記下的。</p>`;
+    }, text:'token 額度 用量 claude', warn: maxPct >= 80});
+
+  // 加密
+  const lr = T.learn;
+  cards.push({tag:'加密', title:'加密學習', icon:'₿', sub: lr ? `${lr.date} 每日學習` : '今天還沒學',
+    body:`<div class="mini"><div>${esc(lr ? lr.topic : '—')}</div></div>
+      <div class="row"><span class="badge b-vio">案例 ${T.cases.length} 篇</span><span class="dim" style="font-size:12px">點開看重點</span></div>`,
+    detail:() => `<h4>主題</h4><div>${esc(lr?.topic)}</div><h4>重點</h4>${(lr?.points||[]).map(p => `<div style="font-size:13px;margin-bottom:6px">· ${esc(p)}</div>`).join('')}
+      <h4>最近的案例</h4>${T.cases.map(c => `<div style="font-size:13px">· ${esc(c)}</div>`).join('')}`,
+    text:'加密 學習 ' + (lr?.topic || '')});
+  cards.push({tag:'加密', title:'模擬盤', icon:'▲', sub:`起始 ${money(T.start)}U・${T.n} 筆已平倉`,
+    body:`<div class="row"><div class="big ${T.pnl>=0?'ok':'bad'}">${money(T.equity)}<small>U</small></div>
+      <span class="badge ${T.pnl>=0?'b-ok':'b-bad'}">${T.pnl>=0?'+':''}${(T.pnl/T.start*100).toFixed(1)}%</span></div>
+      <div class="mini"><div>勝率 ${T.winrate}%・持倉 ${T.open} 筆</div></div>`,
+    detail:() => `<h4>最近平倉</h4><table><tr><th>單</th><th>幣</th><th>方向</th><th class="n">盈虧</th><th class="n">R</th><th>平倉</th></tr>${T.recent.map(r =>
+      `<tr><td>${r.id}</td><td>${r.sym}</td><td>${r.side==='LONG'?'多':'空'}</td><td class="n ${r.pnl>=0?'ok':'bad'}">${money(r.pnl)}</td><td class="n">${r.r ?? '—'}</td><td>${r.closed}</td></tr>`).join('')}</table>`,
+    text:'模擬盤 交易 bingx'});
+
+  // 行事曆
+  const C = D.calendar, S = D.schedule;
+  cards.push({tag:'行事曆', title:'今天行程', icon:'▦', sub: C.ok ? `來源：${S.source}・${S.today.length} 件` : '固定作息（行事曆未連線）',
+    body:`<div class="mini">${S.next.slice(0,3).map(x => `<div><b class="dim">${x.s}</b> ${esc(x.name)}</div>`).join('')}</div>
+      ${C.ok ? '' : `<div class="row"><span class="badge b-warn">${esc(C.err)}</span></div>`}`,
+    detail:() => `<h4>今天（${esc(S.source)}）</h4><table>${S.today.map(x => `<tr class="${S.now && x.s===S.now.s && x.name===S.now.name?'cur':''}"><td>${x.s}–${x.e}</td><td>${esc(x.name)}</td><td class="dim">${esc(x.place)}</td></tr>`).join('')}</table>`,
+    text:'行事曆 行程 作息 ' + S.today.map(x => x.name).join(' ')});
+
+  // 排程健康
+  const bad = J.tasks.filter(t => !t.ok || t.state === 'Disabled'), hb = J.bridge_age_s;
+  const hbOk = hb != null && hb < 600;
+  cards.push({tag:'系統', title:'排程健康', icon:'●', sub:`${J.tasks.length} 個排程`,
+    body:`<div class="row"><div class="big ${bad.length?'warn':'ok'}">${bad.length ? bad.length + ' 個異常' : '全部正常'}</div>
+      <span class="badge ${hbOk?'b-ok':'b-bad'}">bridge ${hbOk ? '在線' : '離線'}</span></div>`,
+    detail:() => `<table><tr><th>排程</th><th>上次</th><th>下次</th><th>狀態</th></tr>${J.tasks.map(t =>
+      `<tr><td>${esc(t.name)}</td><td>${t.last}</td><td>${t.next}</td><td class="${t.ok?'ok':'bad'}">${t.ok?'✓':'✗'} ${t.state==='Running'?'執行中':t.state==='Disabled'?'停用':''}</td></tr>`).join('')}</table>
+      <p class="dim" style="font-size:12px;margin-top:8px">Telegram bridge 心跳：${hb == null ? '讀不到' : Math.round(hb/60) + ' 分鐘前'}</p>`,
+    text:'排程 系統 bridge 早報', warn: bad.length > 0 || !hbOk});
+
+  // 技能
+  const Sk = D.skills, SN = D.skill_notes || {};
+  const sk = (n, cls) => { const [zh, why] = SN[n] || [n, '還沒寫說明']; return `<div style="padding:9px 0;border-bottom:1px solid var(--line)">
+    <b>${esc(zh)}</b> <span class="badge ${cls}">${esc(n)}</span><div class="dim" style="font-size:13px;margin-top:2px">${esc(why)}</div></div>`; };
+  cards.push({tag:'技能', title:'技能館', icon:'✦', sub:`${Sk.plugins.length} 個外掛・${Sk.skills.length} 個自訂技能・點開看每個在做什麼`,
+    body:`<div class="chips" style="margin-top:10px">${Sk.plugins.slice(0,5).map(p => `<span class="badge">${esc((SN[p]||[p])[0])}</span>`).join('')}${Sk.plugins.length>5?`<span class="badge">+${Sk.plugins.length-5}</span>`:''}</div>`,
+    detail:() => `<h4>外掛</h4>${Sk.plugins.map(p => sk(p, '')).join('')}<h4>自訂技能</h4>${Sk.skills.map(p => sk(p, 'b-vio')).join('')}`,
+    text:'技能 外掛 ' + [...Sk.plugins, ...Sk.skills].map(p => p + (SN[p] || []).join('')).join(' ')});
+}
+
+function renderNow() {
+  const S = D.schedule, n = S.now;
+  let pct = 0;
+  if (n) {
+    const m = s => { const [h, mi] = s.split(':').map(Number); return h*60 + mi; };
+    const now = new Date(), cur = now.getHours()*60 + now.getMinutes();
+    let a = m(n.s), b = m(n.e), c = cur;
+    if (b <= a) { b += 1440; if (c < a) c += 1440; }
+    pct = Math.max(0, Math.min(100, (c - a) / (b - a) * 100));
+  }
+  $('#now').innerHTML = `<div class="lbl">▶ 現在該做</div>
+    <div class="what">${n ? esc(n.name) : '空檔'}</div>
+    <div class="meta">${n ? `${n.s}–${n.e}・${esc(n.cat)}${n.place ? '・' + esc(n.place) : ''}` : '目前沒有排定的事'}</div>
+    ${n ? `<div class="bar"><i style="width:${pct}%"></i></div>` : ''}
+    <div class="nextrow">${S.next.map(x => `<div class="nx"><b>${x.s}</b>${esc(x.name)}</div>`).join('')}</div>`;
+}
+
+function renderGrid() {
+  const q = $('#q').value.trim().toLowerCase();
+  const tags = ['全部', ...new Set(cards.map(c => c.tag))];
+  $('#chips').innerHTML = tags.map(t => `<button class="chip ${t===filter?'on':''}" data-t="${t}">${t}<span>${t==='全部'?cards.length:cards.filter(c=>c.tag===t).length}</span></button>`).join('');
+  const shown = cards.filter(c => (filter === '全部' || c.tag === filter) && (!q || (c.title + c.sub + c.text).toLowerCase().includes(q)));
+  $('#grid').innerHTML = shown.length ? shown.map(c => `<button class="card" data-i="${cards.indexOf(c)}">
+    <h3><span>${c.icon}</span>${esc(c.title)}${c.warn ? ' <span class="dot" style="background:var(--warn)"></span>' : ''}</h3>
+    <div class="sub">${esc(c.sub)}</div>${c.body}</button>`).join('') : '<div class="empty">沒有符合的卡片</div>';
+}
+
+function show(data) {
+  D = data;
+  $('#lock').hidden = true; $('#app').hidden = false;
+  $('#upd').textContent = '資料更新 ' + D.updated;
+  build(); renderNow(); renderGrid();
+}
+
+$('#chips').onclick = e => { const b = e.target.closest('.chip'); if (b) { filter = b.dataset.t; renderGrid(); } };
+$('#q').oninput = renderGrid;
+$('#grid').onclick = e => {
+  const b = e.target.closest('.card'); if (!b) return;
+  const c = cards[b.dataset.i];
+  $('#dt').textContent = c.title; $('#dbody').innerHTML = c.detail(); $('#dlg').showModal();
+};
+$('#dbody').onclick = e => { const b = e.target.closest('[data-f]'); if (b) download(D.files[b.dataset.f], b); };
+$('#dx').onclick = () => $('#dlg').close();
+$('#dlg').onclick = e => { if (e.target === $('#dlg')) $('#dlg').close(); };
+$('#out').onclick = () => { store.set(null); location.reload(); };
+
+$('#f').onsubmit = async e => {
+  e.preventDefault();
+  const pw = $('#pw').value; $('#err').textContent = '解鎖中…';
+  try {
+    const d = await load(pw);
+    PW = pw; if ($('#rem').checked) store.set(pw);
+    $('#err').textContent = ''; show(d);
+  } catch (err) {
+    $('#err').textContent = err.name === 'OperationError' ? '密碼不對' : err.message;
+  }
+};
+
+(async () => {
+  const saved = store.get();
+  if (saved) try { PW = saved; show(await load(saved)); } catch { store.set(null); }
+})();
+// 每 5 分鐘重抓一次資料
+setInterval(async () => { if (PW) try { D = await load(PW); show(D); } catch {} }, 300000);
+</script>
+</body>
+</html>
